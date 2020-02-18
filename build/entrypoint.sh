@@ -2,9 +2,7 @@
 
 set -e
 
-echo $HOME
-ls -la $HOME/.docker
-ls -la /github/home/.docker
+gcloud auth configure-docker
 
 if ! docker pull $GCR_IMAGE:$GITHUB_SHA;
 then
