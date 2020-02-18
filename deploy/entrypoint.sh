@@ -11,9 +11,9 @@ else
   echo "GCLOUD_SERVICE_ACCOUNT_KEY was empty, not performing auth" 1>&2
 fi
 
-if [ -n "${$OPENSHIFT_TOKEN}" ]; then
+if [ -n "${OPENSHIFT_TOKEN}" ]; then
   echo "Logging into openshift cluster with OPENSHIFT_TOKEN..."
-  echo $OPENSHIFT_TOKEN | docker login -u $OPENSHIFT_USER --password-stdin $ASPECTRA_REGISTRY
+  echo ${OPENSHIFT_TOKEN} | docker login -u ${OPENSHIFT_USER} --password-stdin ${ASPECTRA_REGISTRY}
 else
   echo "OPENSHIFT_TOKEN was empty, not performing auth" 1>&2
 fi
