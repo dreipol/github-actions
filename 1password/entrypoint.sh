@@ -8,5 +8,5 @@ for var in "$@"
 do
     echo "get secret for $var"
     password_value=$(op get item $var | jq -r ".details.password")
-    echo ::set-env name="${var}"::"${password_value}"
+    echo "::set-env name=${var}::${password_value}"
 done
