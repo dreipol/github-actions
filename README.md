@@ -2,6 +2,34 @@
 
 Repository with github actions for the CI workflow
 
+## 1 Password
+```
+dreipol/github-actions/1password@master
+```
+Gets secrets from 1Password and injects them as environment variables for subsequent steps.
+
+Define the secrets you want to as space separated args.
+
+Required env variables:
+* ONE_PASS_MASTER_PASSWORD
+* ONE_PASS_SUBDOMAIN
+* ONE_PASS_EMAIL
+* ONE_PASS_SECRET_KEY
+
+Example:
+
+This will inject the env variables `GCP_SERVICEACCOUNT_KEY`, `OPENSHIFT_TOKEN`, `OPENSHIFT_USER` filled from 1password and injected into subsequent steps.
+```
+      - uses: dreipol/github-actions/1password@master
+        env:
+          ONE_PASS_MASTER_PASSWORD: ${{ secrets.ONE_PASS_MASTER_PASSWORD }}
+          ONE_PASS_SUBDOMAIN: dreipol
+          ONE_PASS_EMAIL: ${{ secrets.ONE_PASS_EMAIL }}
+          ONE_PASS_SECRET_KEY: ${{ secrets.ONE_PASS_SECRET_KEY }}
+        with:
+          args: "GCP_SERVICEACCOUNT_KEY OPENSHIFT_TOKEN OPENSHIFT_USER"
+```
+
 ## build
 ```
 dreipol/github-actions/build@master
