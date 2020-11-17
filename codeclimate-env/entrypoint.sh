@@ -1,2 +1,2 @@
-echo "::set-env name=BRANCH_NAME::${GITHUB_REF#refs/heads/}"
-echo "::set-env name=GIT_COMMIT_SHA::${GITHUB_SHA}"
+echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+echo "GIT_COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
