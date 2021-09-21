@@ -2,6 +2,10 @@
 
 set -e
 
+if [ -n "${DOCKER_SUBDIRECTORY}" ]; then
+  cd "$DOCKER_SUBDIRECTORY" || exit
+fi
+
 if [ -n "${GCP_SERVICEACCOUNT_KEY}" ]; then
   echo "Logging into gcr.io with GCLOUD_SERVICE_ACCOUNT_KEY..."
   echo ${GCP_SERVICEACCOUNT_KEY} | base64 -d > /tmp/key.json
