@@ -20,5 +20,6 @@ then
       --cache-from=$GCR_IMAGE:$GITHUB_REF_SLUG \
       --build-arg PROJECT_NAME=$PROJECT_NAME \
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
+      --build-arg GITHUB_REF_SLUG=$GCR_IMAGE:$GITHUB_REF_SLUG \
       -t $GCR_IMAGE:$GITHUB_SHA .
 fi
