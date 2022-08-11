@@ -18,6 +18,12 @@ else
   echo "OPENSHIFT_TOKEN was empty, not performing auth" 1>&2
 fi
 
+CONFIG_DIRECTORY="deployment-config/${DEPLOY_ENVIRONMENT}"
+if test -d "$CONFIG_DIRECTORY"; then
+    oc login --server=${OPENSHIFT_HOST} --token=${OPENSHIFT_TOKEN}
+    oc apply -k $CONFIG_DIRECTORY
+fi
+
 docker pull $GCR_IMAGE:$GITHUB_SHA
 docker tag $GCR_IMAGE:$GITHUB_SHA $DEPLOY_IMAGE:$ASPECTRA_TAG
 docker push $DEPLOY_IMAGE:$ASPECTRA_TAG
