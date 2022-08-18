@@ -25,6 +25,6 @@ then
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-main \
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-develop \
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-${CI_COMMIT_REF_SLUG} \
-      ${DOCKER_BUILD_OPTS}
+      ${DOCKER_BUILD_OPTS} \
       .
 fi
