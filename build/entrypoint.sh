@@ -13,13 +13,18 @@ fi
 
 if ! docker pull $GCR_IMAGE:$GITHUB_SHA;
 then
-  echo $GCR_IMAGE:$GITHUB_REF_SLUG $GCR_IMAGE:master $GCR_IMAGE:stage | xargs -P10 -n1 docker pull || true && \
-  docker build \
-      --cache-from=$GCR_IMAGE:$GITHUB_REF_SLUG \
-      --cache-from=$GCR_IMAGE:stage \
-      --cache-from=$GCR_IMAGE:master \
+  docker buildx create --use --name BUILDX_BUILDER
+  docker buildx build \
+      -t $GCR_IMAGE:$GITHUB_SHA \
+      --oputput type=image,push=true \
       --build-arg PROJECT_NAME=$PROJECT_NAME \
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
       --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
-      -t $GCR_IMAGE:$GITHUB_SHA .
+      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-${CI_COMMIT_REF_SLUG},mode=max \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-master \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-main \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-develop \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-${CI_COMMIT_REF_SLUG} \
+      ${DOCKER_BUILD_OPTS}
+      .
 fi
