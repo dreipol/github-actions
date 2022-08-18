@@ -16,7 +16,7 @@ then
   docker buildx create --driver docker-container --use --name BUILDX_BUILDER
   docker buildx build \
       -t $GCR_IMAGE:$GITHUB_SHA \
-      --oputput type=image,push=true \
+      --output type=image,push=true \
       --build-arg PROJECT_NAME=$PROJECT_NAME \
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
       --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
