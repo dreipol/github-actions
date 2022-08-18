@@ -13,7 +13,7 @@ fi
 
 if ! docker pull $GCR_IMAGE:$GITHUB_SHA;
 then
-  docker buildx create --use --name BUILDX_BUILDER
+  docker buildx create --driver docker-container --use --name BUILDX_BUILDER
   docker buildx build \
       -t $GCR_IMAGE:$GITHUB_SHA \
       --oputput type=image,push=true \
