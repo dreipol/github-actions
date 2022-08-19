@@ -17,15 +17,15 @@ then
   docker buildx create --driver docker-container --use --name BUILDX_BUILDER
   docker buildx build \
       -t $GCR_IMAGE:$GITHUB_SHA \
-      --output type=image,push=true \
+      --output type=docker \
       --build-arg PROJECT_NAME=$PROJECT_NAME \
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
       --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
-      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-${CI_COMMIT_REF_SLUG},mode=max \
+      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-${GITHUB_REF_SLUG},mode=max \
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-master \
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-main \
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-develop \
-      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-${CI_COMMIT_REF_SLUG} \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-${GITHUB_REF_SLUG} \
       ${DOCKER_BUILD_OPTS} \
       .
 fi
