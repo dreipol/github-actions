@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -12,6 +12,13 @@ else
   echo "GCLOUD_SERVICE_ACCOUNT_KEY was empty, not performing auth" 1>&2
 fi
 
-docker tag $GCR_IMAGE:$GITHUB_SHA $GCR_IMAGE:$GITHUB_REF_SLUG
-docker push $GCR_IMAGE:$GITHUB_SHA
-docker push $GCR_IMAGE:$GITHUB_REF_SLUG
+if [ -n "${OPENSHIFT_TOKEN}" ]; then
+  echo "Logging into openshift cluster with OPENSHIFT_TOKEN..."
+  echo ${OPENSHIFT_TOKEN} | docker login -u ${OPENSHIFT_USER} --password-stdin ${ASPECTRA_REGISTRY}
+else
+  echo "OPENSHIFT_TOKEN was empty, not performing auth" 1>&2
+fi
+
+docker pull $GCR_IMAGE:$GITHUB_SHA
+docker tag $GCR_IMAGE:$GITHUB_SHA $DEPLOY_IMAGE:$ASPECTRA_TAG
+docker push $DEPLOY_IMAGE:$ASPECTRA_TAG

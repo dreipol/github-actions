@@ -1,3 +1,3 @@
-FROM google/cloud-sdk:280.0.0-alpine
+FROM quay.io/openshift/origin-cli:4.12
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
