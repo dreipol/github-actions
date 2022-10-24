@@ -20,6 +20,7 @@ then
       --output type=docker \
       --build-arg PROJECT_NAME=$PROJECT_NAME \
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
+      --build-arg GITHUB_SHA=$GITHUB_SHA \
       --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
       --cache-to=type=registry,ref=${GCR_IMAGE}:cache-${GITHUB_REF_SLUG},mode=max \
       --cache-from=type=registry,ref=${GCR_IMAGE}:cache-master \
