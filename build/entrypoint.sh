@@ -12,6 +12,11 @@ else
   echo "GCLOUD_SERVICE_ACCOUNT_KEY was empty, not performing auth" 1>&2
 fi
 
+if [ -n "${WORKING_DIRECTORY}" ]; then
+  cd $WORKING_DIRECTORY
+fi
+
+
 if ! docker pull $GCR_IMAGE:$GITHUB_SHA;
 then
   docker buildx create --driver docker-container --use --name BUILDX_BUILDER
