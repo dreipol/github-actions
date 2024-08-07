@@ -39,7 +39,6 @@ docker buildx build \
     --build-arg GITHUB_SHA=$GITHUB_SHA \
     --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
     --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend \
-    --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend \
     --cache-to=type=registry,ref=${GCR_IMAGE}:cache-backend,mode=max \
     --target=backend \
     ${DOCKER_BUILD_OPTS} \
