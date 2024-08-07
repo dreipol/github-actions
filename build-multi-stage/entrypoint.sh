@@ -28,8 +28,11 @@ then
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
       --build-arg GITHUB_SHA=$GITHUB_SHA \
       --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
-      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend \
-      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-frontend,mode=max \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend-master \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend-main \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend-develop \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend-${GITHUB_REF_SLUG} \
+      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-frontend-${GITHUB_REF_SLUG},mode=max \
       --target=frontend \
       ${DOCKER_BUILD_OPTS} \
       .
@@ -41,8 +44,11 @@ then
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
       --build-arg GITHUB_SHA=$GITHUB_SHA \
       --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
-      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend \
-      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-backend,mode=max \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend-master \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend-main \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend-develop \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend-${GITHUB_REF_SLUG} \
+      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-backend-${GITHUB_REF_SLUG},mode=max \
       --target=backend \
       ${DOCKER_BUILD_OPTS} \
       .
