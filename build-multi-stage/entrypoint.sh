@@ -17,30 +17,33 @@ if [ -n "${WORKING_DIRECTORY}" ]; then
 fi
 
 
-docker buildx create --driver docker-container --use --name BUILDX_BUILDER
+if ! docker pull $GCR_IMAGE:$GITHUB_SHA;
+then
+  docker buildx create --driver docker-container --use --name BUILDX_BUILDER
 
-docker buildx build \
-    -t $GCR_IMAGE:$GITHUB_SHA-frontend \
-    --output type=docker \
-    --build-arg PROJECT_NAME=$PROJECT_NAME \
-    --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
-    --build-arg GITHUB_SHA=$GITHUB_SHA \
-    --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
-    --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend \
-    --cache-to=type=registry,ref=${GCR_IMAGE}:cache-frontend,mode=max \
-    --target=frontend \
-    ${DOCKER_BUILD_OPTS} \
-    .
+  docker buildx build \
+      -t $GCR_IMAGE:$GITHUB_SHA-frontend \
+      --output type=docker \
+      --build-arg PROJECT_NAME=$PROJECT_NAME \
+      --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
+      --build-arg GITHUB_SHA=$GITHUB_SHA \
+      --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-frontend \
+      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-frontend,mode=max \
+      --target=frontend \
+      ${DOCKER_BUILD_OPTS} \
+      .
 
-docker buildx build \
-    -t $GCR_IMAGE:$GITHUB_SHA \
-    --output type=docker \
-    --build-arg PROJECT_NAME=$PROJECT_NAME \
-    --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
-    --build-arg GITHUB_SHA=$GITHUB_SHA \
-    --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
-    --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend \
-    --cache-to=type=registry,ref=${GCR_IMAGE}:cache-backend,mode=max \
-    --target=backend \
-    ${DOCKER_BUILD_OPTS} \
-    .
+  docker buildx build \
+      -t $GCR_IMAGE:$GITHUB_SHA \
+      --output type=docker \
+      --build-arg PROJECT_NAME=$PROJECT_NAME \
+      --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
+      --build-arg GITHUB_SHA=$GITHUB_SHA \
+      --build-arg GITHUB_REF_SLUG=$GITHUB_REF_SLUG \
+      --cache-from=type=registry,ref=${GCR_IMAGE}:cache-backend \
+      --cache-to=type=registry,ref=${GCR_IMAGE}:cache-backend,mode=max \
+      --target=backend \
+      ${DOCKER_BUILD_OPTS} \
+      .
+fi
