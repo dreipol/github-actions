@@ -32,7 +32,7 @@ docker buildx build \
     .
 
 docker buildx build \
-    -t $GCR_IMAGE:$GITHUB_SHA-backend \
+    -t $GCR_IMAGE:$GITHUB_SHA \
     --output type=docker \
     --build-arg PROJECT_NAME=$PROJECT_NAME \
     --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
