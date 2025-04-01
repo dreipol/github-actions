@@ -1,0 +1,86 @@
+name: Build and Push Django Project
+
+on:
+  workflow_call:
+    inputs:
+      gcp_serviceaccount_key:
+        required: true
+        type: string
+      docker_image:
+        required: true
+        type: string
+      project_name:
+        required: true
+        type: string
+      django_settings_module:
+        required: true
+        type: string
+      django_test_env_vars:
+        required: false
+        type: string
+        default: ''
+        # Example:
+        # -e DEFAULT_TENANT_ID=1
+        # -e DJANGO_EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+      run_tests:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: cimg/postgres:15.12-postgis
+        env:
+          POSTGRES_USER: dreipol
+          POSTGRES_DB: unit_test
+        ports:
+          - 5432:5432
+
+    env:
+      PROJECT_NAME: ${{ inputs.project_name }}
+      GCR_IMAGE: ${{ inputs.docker_image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dreipol/github-actions/slugify@master
+
+      - uses: dreipol/github-actions/set-logs-url@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_NAME: build
+
+      - name: Docker Build
+        uses: dreipol/github-actions/build@master
+        env:
+          GCP_SERVICEACCOUNT_KEY: ${{ inputs.gcp_serviceaccount_key }}
+
+      - name: Django Tests
+        if: inputs.run_tests == true
+        uses: dreipol/github-actions/codeclimate-coverage@master
+        with:
+          args: >
+            /bin/sh -c "
+            docker run --network=host
+            -e DJANGO_SETTINGS_MODULE=${{ inputs.django_settings_module }}
+            -e DJANGO_DATABASE_URL=\"postgres://dreipol@127.0.0.1:5432/unit_test\"
+            -e DJANGO_SECRET_KEY=foo
+            -e AWS_ACCESS_KEY_ID=
+            -e AWS_SECRET_ACCESS_KEY=
+            -e AWS_STORAGE_BUCKET_NAME=
+            -e AWS_S3_PORT=
+            -e AWS_S3_HOST=
+            ${{ inputs.django_test_env_vars }}
+            --name=django_tests ${{ inputs.docker_image }}:${{ github.sha }} /bin/bash -c \"coverage run -m pytest && coverage xml \" &&
+            docker cp django_tests:/app/coverage.xml coverage.xml"
+
+      - name: Push Image
+        uses: dreipol/github-actions/push@master
+        env:
+          GCP_SERVICEACCOUNT_KEY: ${{ inputs.gcp_serviceaccount_key }}
