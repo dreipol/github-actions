@@ -2,6 +2,8 @@
 
 set -e
 
+FORCE_BUILD="${FORCE_BUILD:-false}"
+
 if [ -n "${GCP_SERVICEACCOUNT_KEY}" ]; then
   echo "Logging into gcr.io with GCLOUD_SERVICE_ACCOUNT_KEY..."
   echo ${GCP_SERVICEACCOUNT_KEY} | base64 -d > /tmp/key.json
@@ -16,22 +18,11 @@ if [ -n "${WORKING_DIRECTORY}" ]; then
   cd $WORKING_DIRECTORY
 fi
 
-if [ -n "${CUSTOM_CACHE_TAG}" ]; then
-    # This is a "Custom Cache Tag Buster": The current setup only allows "code-based" SHA-Tagged Docker builds.
-    # In case of Static Site Generation, the SHA can be "stale". We need to bust it in order to re-generate.
-    IMAGE_TAG="${CUSTOM_CACHE_TAG}"
-    echo "Using CUSTOM_CACHE_TAG: $IMAGE_TAG"
-else
-    IMAGE_TAG="$GITHUB_SHA"
-    echo "Using GITHUB_SHA: $IMAGE_TAG"
-fi
-
-
-if ! docker pull $GCR_IMAGE:$IMAGE_TAG;
+if ! docker pull $GCR_IMAGE:$GITHUB_SHA || [ "$FORCE_BUILD" = "true" ];
 then
   docker buildx create --driver docker-container --use --name BUILDX_BUILDER
   docker buildx build \
-      -t $GCR_IMAGE:$IMAGE_TAG \
+      -t $GCR_IMAGE:$GITHUB_SHA \
       --output type=docker \
       --build-arg PROJECT_NAME=$PROJECT_NAME \
       --build-arg GIT_REV=$GCR_IMAGE:$GITHUB_SHA \
