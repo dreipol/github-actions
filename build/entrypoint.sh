@@ -2,6 +2,8 @@
 
 set -e
 
+FORCE_BUILD="${FORCE_BUILD:-false}"
+
 if [ -n "${GCP_SERVICEACCOUNT_KEY}" ]; then
   echo "Logging into gcr.io with GCLOUD_SERVICE_ACCOUNT_KEY..."
   echo ${GCP_SERVICEACCOUNT_KEY} | base64 -d > /tmp/key.json
@@ -16,8 +18,7 @@ if [ -n "${WORKING_DIRECTORY}" ]; then
   cd $WORKING_DIRECTORY
 fi
 
-
-if ! docker pull $GCR_IMAGE:$GITHUB_SHA;
+if ! docker pull $GCR_IMAGE:$GITHUB_SHA || [ "$FORCE_BUILD" = "true" ];
 then
   docker buildx create --driver docker-container --use --name BUILDX_BUILDER
   docker buildx build \
