@@ -10,6 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  contents: read # actions/checkout
   actions: write # keepalive step re-enables this workflow
 
 jobs:

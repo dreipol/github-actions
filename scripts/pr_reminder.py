@@ -33,6 +33,7 @@ SLACK_API = "https://slack.com/api/chat.postMessage"
 LABEL = "UNREVIEWED"
 MAX_NAGS = 3
 LOCAL_TZ = ZoneInfo("Europe/Zurich")
+REQUEST_TIMEOUT = 15  # seconds; a hung connection must not stall the whole run
 
 
 def github_request(path, token, params=None):
@@ -44,7 +45,7 @@ def github_request(path, token, params=None):
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     })
-    with urllib.request.urlopen(request) as response:
+    with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
         return json.load(response)
 
 
@@ -129,7 +130,7 @@ def send_dm(slack_id, text, token):
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json; charset=utf-8",
     })
-    with urllib.request.urlopen(request) as response:
+    with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
         result = json.load(response)
     if not result.get("ok"):
         raise RuntimeError(f"Slack error for {slack_id}: {result.get('error')}")
