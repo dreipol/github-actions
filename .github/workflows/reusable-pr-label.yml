@@ -1,0 +1,32 @@
+name: Reusable PR label
+
+# Applies the UNREVIEWED label to a pull request.
+# The label is removed MANUALLY by the reviewer after reviewing — that removal
+# is the "reviewed" acknowledgment. This workflow never removes or re-adds it.
+#
+# Consumers call this from a small workflow file, see templates/pr-label.yml.
+# Required caller permissions: pull-requests: write, issues: write
+
+on:
+  workflow_call:
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure UNREVIEWED label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create UNREVIEWED \
+            --color B22D47 \
+            --description "No review yet — remove this label after reviewing" \
+            --force \
+            --repo "${{ github.repository }}"
+
+      - name: Add UNREVIEWED label to PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" \
+            -f "labels[]=UNREVIEWED"

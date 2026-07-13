@@ -1,0 +1,14 @@
+# Copy this file into your repo as .github/workflows/pr-label.yml
+# It labels every new PR with UNREVIEWED. Remove the label manually after
+# you reviewed the PR — reminders stop once the label is gone (PR closed/merged)
+# or removed.
+name: PR label
+on:
+  pull_request:
+    types: [opened, reopened]
+permissions:
+  pull-requests: write
+  issues: write
+jobs:
+  label:
+    uses: dreipol/github-actions/.github/workflows/reusable-pr-label.yml@master

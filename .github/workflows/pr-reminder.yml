@@ -1,0 +1,45 @@
+name: PR review reminders
+
+# Weekday-morning cron: DMs reviewers/authors on Slack about open PRs that
+# still carry the UNREVIEWED label. See scripts/pr_reminder.py and the
+# "PR hygiene" section in the README.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1-5' # ~08:17 Zurich in summer, ~07:17 in winter
+  workflow_dispatch:
+
+permissions:
+  actions: write # keepalive step re-enables this workflow
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Send reminders
+        env:
+          # Test phase: fine-grained PAT. Production: replace with a GitHub App
+          # token via actions/create-github-app-token (see README) — only this
+          # env line changes.
+          GH_TOKEN: ${{ secrets.PR_BOT_PAT }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          GH_SLACK_MAP: ${{ vars.GH_SLACK_MAP }}
+          DRY_RUN: ${{ vars.PR_HYGIENE_DRY_RUN }}
+          ALLOWLIST: ${{ vars.PR_HYGIENE_ALLOWLIST }}
+        run: python3 scripts/pr_reminder.py
+
+      - name: Notify failure on Slack
+        if: failure()
+        continue-on-error: true
+        uses: dreipol/github-actions/slack@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          TEXT: ':boom: PR review reminder run failed. <https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}| Check the logs on github>'
+
+      - name: Keepalive (public repo crons are disabled after 60 idle days)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pr-reminder.yml/enable"
