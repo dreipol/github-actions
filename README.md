@@ -2,6 +2,39 @@
 
 Repository with github actions for the CI workflow
 
+## PR hygiene
+
+Automation so PRs don't sit unreviewed ([templates/pr-label.yml](templates/pr-label.yml), [.github/workflows](/.github/workflows), [scripts/pr_reminder.py](scripts/pr_reminder.py)).
+
+**How it works**
+
+1. **Label** — every new PR automatically gets the `UNREVIEWED` label (workflow in each repo, see below). Drafts and bot PRs included.
+2. **Review, then remove the label manually** — removing `UNREVIEWED` is the "I reviewed this" acknowledgment. Automation never removes or re-adds it.
+3. **Reminders** — a Monday-morning cron in this repo searches all open or merged PRs in the org that still carry the label (merged PRs still nag — e.g. a hotfix reviewed after the fact) and DMs the assignees on Slack, else the requested reviewers, else the author if no reviewer was requested. Weekly, no cap — this is a "don't forget it entirely" nudge, not an urgency escalation.
+
+**Adding the label workflow to a repo**
+
+Copy [templates/pr-label.yml](templates/pr-label.yml) to `.github/workflows/pr-label.yml`. That's all — no secrets needed. `scripts/rollout_pr_label.sh` opens these PRs org-wide (dry run by default, `--execute` to run).
+
+**Reminder configuration** (org/repo Actions variables + secrets on this repo)
+
+| Name | Kind | Purpose |
+| --- | --- | --- |
+| `GH_SLACK_MAP` | variable | JSON `{"github_login": "U_SLACK_MEMBER_ID"}`; unmapped users are skipped and logged |
+| `PR_HYGIENE_DRY_RUN` | variable | anything but `false` = log instead of DM (safe default) |
+| `PR_HYGIENE_ALLOWLIST` | variable | optional JSON array of GitHub logins; if non-empty only these get DMs (pilot) |
+| `PR_BOT_PAT` | secret | GitHub token with org-wide PR read (test phase; swap for a GitHub App later, only the `GH_TOKEN` line in `pr-reminder.yml` changes) |
+| `SLACK_BOT_TOKEN` | secret | bot token of the Slack app from [docs/slack-app-manifest.yml](docs/slack-app-manifest.yml) (scopes `chat:write`, `im:write`) |
+| `SLACK_WEBHOOK` | secret | existing webhook, used only to report failed reminder runs |
+
+Find a Slack member ID: profile → ⋯ → "Copy member ID".
+
+**Launch phases:** 1) `PR_HYGIENE_DRY_RUN=true` — inspect run logs. 2) `false` + allowlist — pilot users get real DMs. 3) empty allowlist — org-wide.
+
+**GitHub App swap (production):** org owner creates an App (permissions: Pull requests read, Members read), installs it org-wide; add `APP_ID` var + `APP_PRIVATE_KEY` secret; in `pr-reminder.yml` mint the token with `actions/create-github-app-token@v2` and point `GH_TOKEN` at its output.
+
+Tests: `cd scripts && python3 -m unittest`
+
 
 ## build
 ```

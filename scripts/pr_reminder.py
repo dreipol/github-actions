@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Slack reminders for PRs carrying the UNREVIEWED label.
 
-Searches all open PRs in the org labeled UNREVIEWED, and DMs the requested
-reviewers (or the author, if nobody was asked to review) on Slack.
+Searches all open or merged PRs in the org labeled UNREVIEWED (merged PRs
+still nag — e.g. a hotfix reviewed after the fact), and DMs the assignees if
+any, else the requested reviewers, else the author, on Slack.
 
-Cadence: nag #1 on the first weekday morning after the label was applied,
-then daily, hard stop after nag #3. Stateless — the nag number is derived
-from the timestamp of the (latest) UNREVIEWED "labeled" event on the PR.
-Removing the label (done manually by the reviewer) stops the reminders.
+Cadence: weekly, Monday mornings, no cap — this is a "don't forget it
+entirely" nudge, not an urgency escalation. Stateless — reminder text shows
+how many weekdays the PR has been unreviewed, derived from the timestamp of
+the (latest) UNREVIEWED "labeled" event on the PR. Removing the label (done
+manually by the reviewer) stops the reminders.
 
 Environment:
   GH_TOKEN          GitHub token with org-wide PR read access (PAT or App token)
@@ -31,7 +33,6 @@ from zoneinfo import ZoneInfo
 GITHUB_API = "https://api.github.com"
 SLACK_API = "https://slack.com/api/chat.postMessage"
 LABEL = "UNREVIEWED"
-MAX_NAGS = 3
 LOCAL_TZ = ZoneInfo("Europe/Zurich")
 REQUEST_TIMEOUT = 15  # seconds; a hung connection must not stall the whole run
 
@@ -62,7 +63,7 @@ def github_paginate(path, token, params=None, items_key=None):
 
 
 def search_unreviewed_prs(org, token):
-    query = f"org:{org} is:pr is:open label:{LABEL}"
+    query = f"org:{org} is:pr (is:merged OR is:open) label:{LABEL}"
     return list(github_paginate("/search/issues", token, {"q": query}, items_key="items"))
 
 
@@ -83,7 +84,7 @@ def nag_number(anchor_date, today):
     """Count of weekdays d with anchor_date < d <= today.
 
     Labeled Monday -> Tuesday run = 1; labeled Friday -> Monday run = 1
-    (weekends don't count); values above MAX_NAGS mean: stay silent.
+    (weekends don't count). Used as the "N weekdays unreviewed" display age.
     """
     count = 0
     day = anchor_date
@@ -95,11 +96,19 @@ def nag_number(anchor_date, today):
 
 
 def pr_targets(repo, number, author, token):
-    """(logins, is_author_fallback) — requested reviewers, else the author."""
+    """(logins, is_author_fallback) — assignees, else requested reviewers, else the author.
+
+    Assignees win first: reassigning a PR to someone (e.g. a reviewer handing
+    it back to the author after requesting changes) signals who the ball is
+    with now, and requested_reviewers isn't cleared by submitting a review.
+    """
     pull = github_request(f"/repos/{repo}/pulls/{number}", token)
-    reviewers = [user["login"] for user in pull.get("requested_reviewers", [])]
     for team in pull.get("requested_teams", []):
         print(f"SKIP team reviewer '{team['slug']}' on {repo}#{number} (teams unsupported)")
+    assignees = [user["login"] for user in pull.get("assignees", [])]
+    if assignees:
+        return assignees, False
+    reviewers = [user["login"] for user in pull.get("requested_reviewers", [])]
     if reviewers:
         return reviewers, False
     return [author], True
@@ -112,9 +121,8 @@ def format_dm(entries):
     ]
     for entry in entries:
         nag = entry["nag"]
-        prefix = "🔴 *Final reminder:* " if nag == MAX_NAGS else ""
         age = f"{nag} weekday{'s' if nag != 1 else ''} unreviewed"
-        lines.append(f"{prefix}<{entry['url']}|{entry['title']}> ({entry['repo']}, {age})")
+        lines.append(f"<{entry['url']}|{entry['title']}> ({entry['repo']}, {age})")
         if entry["author_fallback"]:
             lines.append("        ↳ your PR has *no reviewer assigned* — please request one")
     lines += [
@@ -145,7 +153,7 @@ def main():
 
     today = datetime.now(LOCAL_TZ).date()
     prs = search_unreviewed_prs(org, gh_token)
-    print(f"Found {len(prs)} open PRs with label {LABEL} (dry_run={dry_run})")
+    print(f"Found {len(prs)} open/merged PRs with label {LABEL} (dry_run={dry_run})")
 
     queue = {}  # github login -> list of PR entries
     for pr in prs:
@@ -157,10 +165,7 @@ def main():
             continue
         nag = nag_number(anchor.astimezone(LOCAL_TZ).date(), today)
         if nag == 0:
-            print(f"SKIP {repo}#{number}: labeled today, first nag tomorrow")
-            continue
-        if nag > MAX_NAGS:
-            print(f"SKIP {repo}#{number}: past nag #{MAX_NAGS}, staying silent")
+            print(f"SKIP {repo}#{number}: labeled today, first nag next Monday")
             continue
         targets, author_fallback = pr_targets(repo, number, pr["user"]["login"], gh_token)
         for login in targets:

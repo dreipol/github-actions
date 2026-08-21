@@ -1,12 +1,12 @@
 name: PR review reminders
 
-# Weekday-morning cron: DMs reviewers/authors on Slack about open PRs that
-# still carry the UNREVIEWED label. See scripts/pr_reminder.py and the
-# "PR hygiene" section in the README.
+# Monday-morning cron: DMs assignees/reviewers/authors on Slack about open or
+# merged PRs that still carry the UNREVIEWED label. See scripts/pr_reminder.py
+# and the "PR hygiene" section in the README.
 
 on:
   schedule:
-    - cron: '17 6 * * 1-5' # ~08:17 Zurich in summer, ~07:17 in winter
+    - cron: '17 6 * * 1' # ~08:17 Zurich in summer, ~07:17 in winter
   workflow_dispatch:
 
 permissions:
