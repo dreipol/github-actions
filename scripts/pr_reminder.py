@@ -24,6 +24,7 @@ Environment:
 
 import json
 import os
+import random
 import sys
 import time
 import urllib.parse
@@ -120,9 +121,41 @@ def pr_targets(repo, number, author, token):
     return [author], True
 
 
+INTROS = [
+    "👋 You have pull requests waiting for review:",
+    "🛋️ Knock knock knock, reviewer. Knock knock knock, reviewer. Knock knock knock, reviewer:",
+    "😼 Bazinga! These pull requests are still waiting for you:",
+    "🚩 Welcome to Fun with Flags. Today's flag: `UNREVIEWED`, on these PRs:",
+    "📜 Per section 37(b) of the Roommate Agreement, these PRs require your review:",
+    "🐈 Until someone looks, these PRs are both reviewed and unreviewed. Please collapse the wave function:",
+    "🎵 Soft PR, warm PR, little ball of code… I WILL KEEP SINGING UNTIL YOU REVIEW. I KNOW ALL THE VERSES:",
+    "🧠 I'm not saying you forgot these PRs. I'm saying my mother had me tested, and I'd remember:",
+    "🐙 Random fact: octopuses have three hearts. You have one, and these unreviewed PRs are breaking it:",
+    "🖖 I have invoked the Roommate Agreement's emergency clause. You are now legally my reviewer. Bazinga is NOT applicable:",
+    "🧪 I have run 4,000 simulations. In 3,999 of them you review these PRs. In the other one, Leonard does it and it goes horribly:",
+    "🕯️ I have lit a candle for each of these PRs. The candles are running low. REVIEW THEM:",
+    "🦆 I asked the rubber duck to review these. It refused. It's on you now:",
+    "👁️ The PRs have started whispering your name at night. Please make them stop:",
+    "📬 You've got PRs! These are waiting for your review:",
+    "🔥 This is fine. Everything is fine. These PRs are fine. (They are not fine. Review them.):",
+    "🦝 A raccoon got into the repo and labeled these UNREVIEWED. Honestly, the raccoon has a point:",
+    "🤓 Fun fact: unreviewed PRs are 100% more likely to be forgotten. Here are yours:",
+    "📠 This message was faxed from the year 3000. Humanity fell because nobody reviewed these PRs:",
+    "🚀 These pull requests are ready for liftoff, they just need your review:",
+    "🟫 Random fact: wombats poop cubes. Nobody knows why you haven't reviewed these PRs either:",
+    "🦄 Random fact: Scotland's national animal is the unicorn. Equally mythical: a review on these PRs:",
+    "🦦 Random fact: sea otters hold hands while sleeping so they don't drift apart. Hold hands with these PRs:",
+    "🍌 Random fact: bananas are berries, strawberries are not. Nothing is real. Except these PRs. Review them:",
+    "🪐 Random fact: a day on Venus is longer than its year. These PRs have been waiting about one Venus day:",
+    "🦩 Random fact: a group of flamingos is called a flamboyance. A group of unreviewed PRs is called this message:",
+    "⚔️ Random fact: the shortest war in history lasted about 38 minutes. These PRs have been waiting longer:",
+    "🏺 Random fact: Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid. These PRs feel about that old:",
+]
+
+
 def format_dm(entries):
     lines = [
-        "👋 You have pull requests waiting for review:",
+        random.choice(INTROS),
         "",
     ]
     for entry in entries:
