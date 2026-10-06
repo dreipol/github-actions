@@ -1,0 +1,50 @@
+name: Reusable PR label
+
+# Manages the UNREVIEWED label on a pull request:
+# - opened/reopened: adds the label
+# - review submitted with state "approved": removes it (also works on merged
+#   PRs, so a hotfix reviewed after the fact is acknowledged by approving)
+# Reviewers can still remove the label manually (e.g. after a review that
+# only commented). The label is never re-added except on reopen.
+#
+# Consumers call this from a small workflow file, see templates/pr-label.yml.
+# Required caller permissions: pull-requests: write, issues: write
+
+on:
+  workflow_call:
+
+jobs:
+  label:
+    # Dependabot runs get a read-only GITHUB_TOKEN, like forks — skip them
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure UNREVIEWED label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create UNREVIEWED \
+            --color B22D47 \
+            --description "No review yet — approve or remove this label after reviewing" \
+            --force \
+            --repo "${{ github.repository }}"
+
+      - name: Add UNREVIEWED label to PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" \
+            -f "labels[]=UNREVIEWED"
+
+  unlabel:
+    if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove UNREVIEWED label from PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # 404 = label already gone (removed manually or never added); any
+        # other error (e.g. 403) must fail, or the reminders silently continue
+        run: |
+          out=$(gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/UNREVIEWED" 2>&1) \
+            || { grep -q 'HTTP 404' <<<"$out" || { echo "$out"; exit 1; }; echo "UNREVIEWED label not present, nothing to remove"; }

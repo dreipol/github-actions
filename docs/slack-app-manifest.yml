@@ -1,0 +1,22 @@
+# Slack app manifest for the PR review reminder bot.
+# A Slack workspace admin creates the app at https://api.slack.com/apps
+# ("Create New App" -> "From an app manifest"), installs it to the workspace,
+# and stores the resulting bot token (xoxb-...) as the SLACK_BOT_TOKEN secret
+# in dreipol/github-actions.
+display_information:
+  name: PR Review Reminder
+  description: DMs you about pull requests waiting for your review
+  background_color: "#B22D47"
+features:
+  bot_user:
+    display_name: pr-review-reminder
+    always_online: false
+oauth_config:
+  scopes:
+    bot:
+      - chat:write
+      - im:write
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

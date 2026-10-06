@@ -1,0 +1,15 @@
+# Dogfooding: PRs in this repo get the UNREVIEWED label too.
+# Other repos use templates/pr-label.yml (pinned @master); this one references
+# the reusable workflow relatively so it works on unmerged branches as well.
+name: PR label
+on:
+  pull_request:
+    types: [opened, reopened]
+  pull_request_review:
+    types: [submitted]
+permissions:
+  pull-requests: write
+  issues: write
+jobs:
+  label:
+    uses: ./.github/workflows/reusable-pr-label.yml
