@@ -6,7 +6,7 @@ name: PR review reminders
 
 on:
   schedule:
-    - cron: '17 6 * * 1' # ~08:17 Zurich in summer, ~07:17 in winter
+    - cron: '17 8 * * 1' # ~10:17 Zurich in summer, ~09:17 in winter
   workflow_dispatch:
 
 permissions:

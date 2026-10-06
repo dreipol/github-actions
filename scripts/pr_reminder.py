@@ -8,8 +8,9 @@ any, else the requested reviewers, else the author, on Slack.
 Cadence: weekly, Monday mornings, no cap — this is a "don't forget it
 entirely" nudge, not an urgency escalation. Stateless — reminder text shows
 how many weekdays the PR has been unreviewed, derived from the timestamp of
-the (latest) UNREVIEWED "labeled" event on the PR. Removing the label (done
-manually by the reviewer) stops the reminders.
+the (latest) UNREVIEWED "labeled" event on the PR. Approving the PR removes
+the label automatically (see reusable-pr-label.yml); removing it manually
+works too. Either stops the reminders.
 
 Environment:
   GH_TOKEN          GitHub token with org-wide PR read access (PAT or App token)
@@ -64,7 +65,9 @@ def github_paginate(path, token, params=None, items_key=None):
 
 def search_unreviewed_prs(org, token):
     query = f"org:{org} is:pr (is:merged OR is:open) label:{LABEL}"
-    return list(github_paginate("/search/issues", token, {"q": query}, items_key="items"))
+    # advanced_search: legacy search silently ignores OR/parentheses (0 hits)
+    params = {"q": query, "advanced_search": "true"}
+    return list(github_paginate("/search/issues", token, params, items_key="items"))
 
 
 def label_anchor(repo, number, token):
@@ -100,7 +103,8 @@ def pr_targets(repo, number, author, token):
 
     Assignees win first: reassigning a PR to someone (e.g. a reviewer handing
     it back to the author after requesting changes) signals who the ball is
-    with now, and requested_reviewers isn't cleared by submitting a review.
+    with now. GitHub drops a reviewer from requested_reviewers once they
+    submit any review, so a comment-only review falls back to the author.
     """
     pull = github_request(f"/repos/{repo}/pulls/{number}", token)
     for team in pull.get("requested_teams", []):
@@ -124,10 +128,10 @@ def format_dm(entries):
         age = f"{nag} weekday{'s' if nag != 1 else ''} unreviewed"
         lines.append(f"<{entry['url']}|{entry['title']}> ({entry['repo']}, {age})")
         if entry["author_fallback"]:
-            lines.append("        ↳ your PR has *no reviewer assigned* — please request one")
+            lines.append("        ↳ your PR has *no pending reviewer* — please (re-)request a review")
     lines += [
         "",
-        "_Review the PR, then remove the `UNREVIEWED` label to stop these reminders._",
+        "_Approve the PR (or remove the `UNREVIEWED` label) to stop these reminders._",
     ]
     return "\n".join(lines)
 
@@ -155,26 +159,31 @@ def main():
     prs = search_unreviewed_prs(org, gh_token)
     print(f"Found {len(prs)} open/merged PRs with label {LABEL} (dry_run={dry_run})")
 
+    failures = 0
     queue = {}  # github login -> list of PR entries
     for pr in prs:
         repo = pr["repository_url"].removeprefix(f"{GITHUB_API}/repos/")
         number = pr["number"]
-        anchor = label_anchor(repo, number, gh_token)
-        if anchor is None:
-            print(f"SKIP {repo}#{number}: no {LABEL} labeled event found")
+        try:
+            anchor = label_anchor(repo, number, gh_token)
+            if anchor is None:
+                print(f"SKIP {repo}#{number}: no {LABEL} labeled event found")
+                continue
+            nag = nag_number(anchor.astimezone(LOCAL_TZ).date(), today)
+            if nag == 0:
+                print(f"SKIP {repo}#{number}: labeled today, first nag next Monday")
+                continue
+            targets, author_fallback = pr_targets(repo, number, pr["user"]["login"], gh_token)
+        except Exception as error:  # one broken PR must not block everyone's DMs
+            print(f"ERROR reading {repo}#{number}: {error}")
+            failures += 1
             continue
-        nag = nag_number(anchor.astimezone(LOCAL_TZ).date(), today)
-        if nag == 0:
-            print(f"SKIP {repo}#{number}: labeled today, first nag next Monday")
-            continue
-        targets, author_fallback = pr_targets(repo, number, pr["user"]["login"], gh_token)
         for login in targets:
             queue.setdefault(login, []).append({
                 "repo": repo, "url": pr["html_url"], "title": pr["title"],
                 "nag": nag, "author_fallback": author_fallback,
             })
 
-    failures = 0
     for login, entries in sorted(queue.items()):
         summary = ", ".join(f"{e['repo']}#{e['url'].rsplit('/', 1)[1]} (nag {e['nag']})" for e in entries)
         if allowlist and login not in allowlist:
@@ -196,7 +205,7 @@ def main():
             failures += 1
 
     if failures:
-        sys.exit(f"{failures} Slack DM(s) failed")
+        sys.exit(f"{failures} PR lookup(s) / Slack DM(s) failed")
 
 
 if __name__ == "__main__":
