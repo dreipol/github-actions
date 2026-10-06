@@ -127,7 +127,7 @@ def format_dm(entries):
     ]
     for entry in entries:
         nag = entry["nag"]
-        age = f"{nag} weekday{'s' if nag != 1 else ''} unreviewed"
+        age = f"{nag} weekday{'s' if nag != 1 else ''} unreviewed" if nag else "labeled today"
         lines.append(f"<{entry['url']}|{entry['title']}> ({entry['repo']}, {age})")
         if entry["author_fallback"]:
             lines.append("        ↳ your PR has *no pending reviewer* — please (re-)request a review")
@@ -172,9 +172,6 @@ def main():
                 print(f"SKIP {repo}#{number}: no {LABEL} labeled event found")
                 continue
             nag = nag_number(anchor.astimezone(LOCAL_TZ).date(), today)
-            if nag == 0:
-                print(f"SKIP {repo}#{number}: labeled today, first nag next Monday")
-                continue
             targets, author_fallback = pr_targets(repo, number, pr["user"]["login"], gh_token)
         except Exception as error:  # one broken PR must not block everyone's DMs
             print(f"ERROR reading {repo}#{number}: {error}")
