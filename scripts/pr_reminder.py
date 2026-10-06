@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Slack reminders for PRs carrying the UNREVIEWED label.
 
-Searches all open or merged PRs in the org labeled UNREVIEWED (merged PRs
-still nag — e.g. a hotfix reviewed after the fact), and DMs the assignees if
+Searches all open PRs and PRs merged within the last year in the org labeled
+UNREVIEWED (merged PRs still nag — e.g. a hotfix reviewed after the fact), and DMs the assignees if
 any, else the requested reviewers, else the author, on Slack.
 
 Cadence: weekly, Monday mornings, no cap — this is a "don't forget it
@@ -28,13 +28,14 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 GITHUB_API = "https://api.github.com"
 SLACK_API = "https://slack.com/api/chat.postMessage"
 LABEL = "UNREVIEWED"
 LOCAL_TZ = ZoneInfo("Europe/Zurich")
+MERGED_MAX_AGE = timedelta(days=365)  # older merged PRs stop nagging; also keeps search < 1000-hit cap
 REQUEST_TIMEOUT = 15  # seconds; a hung connection must not stall the whole run
 
 
@@ -63,8 +64,9 @@ def github_paginate(path, token, params=None, items_key=None):
         page += 1
 
 
-def search_unreviewed_prs(org, token):
-    query = f"org:{org} is:pr (is:merged OR is:open) label:{LABEL}"
+def search_unreviewed_prs(org, token, today):
+    cutoff = (today - MERGED_MAX_AGE).isoformat()
+    query = f"org:{org} is:pr label:{LABEL} (is:open OR (is:merged merged:>={cutoff}))"
     # advanced_search: legacy search silently ignores OR/parentheses (0 hits)
     params = {"q": query, "advanced_search": "true"}
     return list(github_paginate("/search/issues", token, params, items_key="items"))
@@ -156,7 +158,7 @@ def main():
     allowlist = json.loads(os.environ.get("ALLOWLIST") or "[]")
 
     today = datetime.now(LOCAL_TZ).date()
-    prs = search_unreviewed_prs(org, gh_token)
+    prs = search_unreviewed_prs(org, gh_token, today)
     print(f"Found {len(prs)} open/merged PRs with label {LABEL} (dry_run={dry_run})")
 
     failures = 0
