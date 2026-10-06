@@ -10,7 +10,7 @@ Automation so PRs don't sit unreviewed ([templates/pr-label.yml](templates/pr-la
 
 1. **Label** — every new PR automatically gets the `UNREVIEWED` label (workflow in each repo, see below). Drafts included; Dependabot PRs are skipped (their workflow token is read-only).
 2. **Approve → label removed** — an approving review removes `UNREVIEWED` automatically, also on already merged PRs (GitHub allows approving after merge). Reviewed without approving? Remove the label manually. The label is only re-added when a PR is reopened.
-3. **Reminders** — a Monday-morning cron in this repo searches all open or merged PRs in the org that still carry the label (merged PRs still nag — e.g. a hotfix reviewed after the fact) and DMs the assignees on Slack, else the requested reviewers, else the author if no reviewer was requested. Weekly, no cap — this is a "don't forget it entirely" nudge, not an urgency escalation.
+3. **Reminders** — a Monday-morning cron in this repo searches all open PRs and PRs merged within the last year in the org that still carry the label (merged PRs still nag — e.g. a hotfix reviewed after the fact) and DMs the assignees on Slack, else the requested reviewers, else the author if no reviewer was requested. Weekly, no cap — this is a "don't forget it entirely" nudge, not an urgency escalation.
 
 **Adding the label workflow to a repo**
 
