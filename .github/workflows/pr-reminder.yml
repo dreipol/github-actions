@@ -19,12 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Org-wide read token from the dreipol PR reminder GitHub App (see README)
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.PR_BOT_APP_ID }}
+          private-key: ${{ secrets.PR_BOT_APP_PRIVATE_KEY }}
+          owner: dreipol # without this the token only covers this repo
+
       - name: Send reminders
         env:
-          # Test phase: fine-grained PAT. Production: replace with a GitHub App
-          # token via actions/create-github-app-token (see README) — only this
-          # env line changes.
-          GH_TOKEN: ${{ secrets.PR_BOT_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           GH_SLACK_MAP: ${{ vars.GH_SLACK_MAP }}
           DRY_RUN: ${{ vars.PR_HYGIENE_DRY_RUN }}
