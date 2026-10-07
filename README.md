@@ -23,7 +23,8 @@ Copy [templates/pr-label.yml](templates/pr-label.yml) to `.github/workflows/pr-l
 | `GH_SLACK_MAP` | variable | JSON `{"github_login": "U_SLACK_MEMBER_ID"}`; unmapped users are skipped and logged |
 | `PR_HYGIENE_DRY_RUN` | variable | anything but `false` = log instead of DM (safe default) |
 | `PR_HYGIENE_ALLOWLIST` | variable | optional JSON array of GitHub logins; if non-empty only these get DMs (pilot) |
-| `PR_BOT_PAT` | secret | GitHub token with org-wide PR read (test phase; swap for a GitHub App later, only the `GH_TOKEN` line in `pr-reminder.yml` changes) |
+| `PR_BOT_APP_ID` | variable | App ID of the PR reminder GitHub App (see below) |
+| `PR_BOT_APP_PRIVATE_KEY` | secret | private key (`.pem` contents) of that GitHub App |
 | `SLACK_BOT_TOKEN` | secret | bot token of the Slack app from [docs/slack-app-manifest.yml](docs/slack-app-manifest.yml) (scopes `chat:write`, `im:write`) |
 | `SLACK_WEBHOOK` | secret | existing webhook, used only to report failed reminder runs |
 
@@ -31,7 +32,7 @@ Find a Slack member ID: profile → ⋯ → "Copy member ID".
 
 **Launch phases:** 1) `PR_HYGIENE_DRY_RUN=true` — inspect run logs. 2) `false` + allowlist — pilot users get real DMs. 3) empty allowlist — org-wide.
 
-**GitHub App swap (production):** org owner creates an App (permissions: Pull requests read, Members read), installs it org-wide; add `APP_ID` var + `APP_PRIVATE_KEY` secret; in `pr-reminder.yml` mint the token with `actions/create-github-app-token@v2` and point `GH_TOKEN` at its output.
+**GitHub App:** the reminder reads PRs org-wide (incl. private repos) with a token minted per run by `actions/create-github-app-token`. Setup (org owner): dreipol → Settings → Developer settings → GitHub Apps → New GitHub App; webhook off; repository permissions *Pull requests: Read* and *Issues: Read*; installable only on this account. Install it on **All repositories**, then store its App ID as `PR_BOT_APP_ID` and a generated private key as `PR_BOT_APP_PRIVATE_KEY`.
 
 Tests: `cd scripts && python3 -m unittest`
 
