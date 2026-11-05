@@ -312,9 +312,9 @@ def main():
         if not dry_run:
             write_cell(token, update["cell"], update["new"])
     if dry_run:
-        print(f"Dry run: nothing written. Set CORE_VERSIONS_DRY_RUN to false to write the {len(updates)} changes.")
+        print(f"Dry run: nothing written ({len(updates)} planned). Set CORE_VERSIONS_DRY_RUN to false to write.")
     else:
-        print(f"Updated {len(updates)} cells")
+        print(f"Cells updated: {len(updates)}")
 
 
 if __name__ == "__main__":
