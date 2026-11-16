@@ -16,7 +16,7 @@ Environment (set by GitHub Actions / the reusable workflow):
   GITHUB_REPOSITORY    the project repo, e.g. dreipol/sib-website
   GITHUB_REF_NAME      the pushed branch: main, master, stage or develop
   GOOGLE_ACCESS_TOKEN  access token of the Google service account
-  DRY_RUN              "false" writes to the sheet, anything else only prints
+  DRY_RUN              "true" only prints the changes; not set or anything else writes them
 """
 
 import json
@@ -122,6 +122,29 @@ def read_yarn_lock(text):
     return versions
 
 
+def read_pnpm_lock(text):
+    """The project's own packages are listed before the "packages:" section, like this;
+    the first entry of a package wins:
+
+          next:
+            specifier: ^16.4.0
+            version: 16.4.1(react@19.3.0)
+    """
+    versions = {}
+    current = None
+    for line in text.splitlines():
+        if line.startswith("packages:"):
+            break
+        name = line.strip().removesuffix(":")
+        if line.endswith(":") and name in NODE_PACKAGES:
+            current = NODE_PACKAGES[name]
+        elif current and line.strip().startswith("version:"):
+            version = line.split(":", 1)[1].strip().strip("'")
+            versions.setdefault(current, version.split("(")[0])  # drop the peer dependencies in brackets
+            current = None
+    return versions
+
+
 # The files to look at, most reliable first: if two files contain a version
 # of the same technology, the earlier one wins.
 FILES = [
@@ -132,6 +155,7 @@ FILES = [
     ("uv.lock", read_uv_lock),
     ("package-lock.json", read_package_lock),
     ("yarn.lock", read_yarn_lock),
+    ("pnpm-lock.yaml", read_pnpm_lock),
 ]
 
 
@@ -301,7 +325,7 @@ def main():
     branch = os.environ["GITHUB_REF_NAME"]
     if branch not in ("main", "master", "stage", "develop"):
         sys.exit(f"Branch {branch} is not main, master, stage or develop")
-    dry_run = os.environ.get("DRY_RUN") != "false"
+    dry_run = os.environ.get("DRY_RUN") == "true"
 
     updates = plan_updates(read_rows(token), repo, branch, folders)
     if not updates:
@@ -312,7 +336,7 @@ def main():
         if not dry_run:
             write_cell(token, update["cell"], update["new"])
     if dry_run:
-        print(f"Dry run: nothing written ({len(updates)} planned). Set CORE_VERSIONS_DRY_RUN to false to write.")
+        print(f"Dry run: nothing written ({len(updates)} planned). Remove CORE_VERSIONS_DRY_RUN or set it to false to write.")
     else:
         print(f"Cells updated: {len(updates)}")
 

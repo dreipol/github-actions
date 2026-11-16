@@ -43,7 +43,7 @@ Keeps the versions of Python, Django, djangoCMS, Node, Next and React up to date
 **How it works**
 
 1. **Trigger** — every push (e.g. a merged PR) to `main`/`master` or `stage`/`develop` of a project repo runs the workflow in that repo. To fill the sheet right away, start it by hand: Actions → "Core versions" → Run workflow, pick the branch.
-2. **Versions** — the script reads the project's own files, in this order (the first file with a version wins): `Dockerfile` (`FROM python:…` / `node:…`, `ENV NODE_VERSION`), `.python-version`, `.nvmrc`, `Pipfile.lock`, `uv.lock`, `package-lock.json`, `yarn.lock`. In a monorepo each folder (e.g. `backend/`, `frontend/`) is read separately.
+2. **Versions** — the script reads the project's own files, in this order (the first file with a version wins): `Dockerfile` (`FROM python:…` / `node:…`, `ENV NODE_VERSION`), `.python-version`, `.nvmrc`, `Pipfile.lock`, `uv.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`. In a monorepo each folder (e.g. `backend/`, `frontend/`) is read separately.
 3. **Rows** — the sheet stays hand-maintained: one row per project environment, name in column **C**, GitHub repo URL in column **K**. `main`/`master` updates the rows whose name does not contain `stage`, `stage`/`develop` the rows whose name contains `stage`.
 4. **Cells** — only the version columns are written: **AH** Python, **AI** Django, **AK** Next, **AL** Node, **AM** React, **AO** djangoCMS. A cell is only written when the value changed, never emptied, and not replaced by a less precise form of itself (the sheet's `3.13.1` stays when the Dockerfile only says `python:3.13`). The run log lists every change, e.g. `Update Django from 5.2.10 to 5.2.17 in AI12 for project '…' (from Pipfile.lock)`.
 
@@ -58,7 +58,7 @@ Copy [templates/core-versions.yml](templates/core-versions.yml) to `.github/work
 | Name                               | Kind     | Purpose                                                                                 |
 | ---------------------------------- | -------- | --------------------------------------------------------------------------------------- |
 | `CORE_VERSIONS_GOOGLE_CREDENTIALS` | secret   | JSON key of the Google service account; the sheet is shared with its e-mail as _Editor_ |
-| `CORE_VERSIONS_DRY_RUN`            | variable | anything but `false` = log the planned changes instead of writing them (safe default)   |
+| `CORE_VERSIONS_DRY_RUN`            | variable | `true` = log the planned changes instead of writing them; not set = write              |
 
 The sheet ID, tab and columns are constants at the top of [scripts/core_versions.py](scripts/core_versions.py).
 
