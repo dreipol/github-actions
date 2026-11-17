@@ -204,38 +204,19 @@ def repo_name(cell):
     return f"{owner}/{repo.removesuffix('.git')}".lower()
 
 
-def pick_folders(folders, part):
-    """The project folders that belong to a "frontend" or "backend" row.
-
-    Without a part: all of them. Otherwise the folders whose name contains the
-    part (e.g. frontend/), or, if there are none, all except the other part's
-    (a backend row of a repo with only a frontend/ folder gets the root).
-    """
-    if part is None:
-        return folders
-    matching = [folder for folder in folders if part in folder]
-    if matching:
-        return matching
-    other = "backend" if part == "frontend" else "frontend"
-    return [folder for folder in folders if other not in folder]
-
-
 def plan_updates(rows, repo, branch, folders):
     """The cells to change: [{"tech", "cell", "old", "new", "project", "source"}]."""
+    # The project's versions; if several folders have one, the first folder wins (the root first)
+    versions = {}
+    for folder, found in folders.items():
+        for tech, (version, filename) in found.items():
+            versions.setdefault(tech, (version, os.path.join(folder, filename)))
+
     stage = branch in ("stage", "develop")
     updates = []
     for row in rows:
-        name = row["name"].lower()
-        if row["repo"] != repo or ("stage" in name) != stage:
+        if row["repo"] != repo or ("stage" in row["name"].lower()) != stage:
             continue
-        part = "frontend" if "frontend" in name else "backend" if "backend" in name else None
-
-        # The versions for this row; if several folders have one, the first folder wins
-        versions = {}
-        for folder in pick_folders(list(folders), part):
-            for tech, (version, filename) in folders[folder].items():
-                versions.setdefault(tech, (version, os.path.join(folder, filename)))
-
         for tech, (new, source) in versions.items():
             old = row["versions"][tech]
             # Skip unchanged values, and keep the sheet's value if it is more precise (3.13.1 vs. 3.13)
