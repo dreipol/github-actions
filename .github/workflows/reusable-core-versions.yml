@@ -1,0 +1,48 @@
+name: Reusable core versions
+
+# Writes the Python/Django/djangoCMS/Node/Next/React versions of the calling
+# project repo into the "Web / Server" tab of sheet "39H Serverliste und SLA":
+# - push to main/master: the project's "prod" rows
+# - push to stage/develop: the project's "stage" rows
+# Rows are found by the repo URL in column K. See scripts/core_versions.py.
+#
+# Consumers call this from a small workflow file, see templates/core-versions.yml.
+# Required caller settings: permissions contents: read, secrets: inherit
+# Needs the org secret CORE_VERSIONS_GOOGLE_CREDENTIALS (see README).
+
+on:
+  workflow_call:
+
+jobs:
+  core-versions:
+    # Dependabot runs don't get the org secrets — skip them
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the project
+        uses: actions/checkout@v6
+        with:
+          path: project
+
+      - name: Check out the version script
+        uses: actions/checkout@v6
+        with:
+          repository: dreipol/github-actions
+          ref: master
+          path: tools
+
+      - name: Log in to Google as the core versions service account
+        uses: google-github-actions/auth@v2
+        id: google-auth
+        with:
+          credentials_json: ${{ secrets.CORE_VERSIONS_GOOGLE_CREDENTIALS }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/spreadsheets
+
+      # Sheet ID and layout are set in the script; repo and branch come from
+      # GITHUB_REPOSITORY / GITHUB_REF_NAME, which Actions sets automatically
+      - name: Write versions to the sheet
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google-auth.outputs.access_token }}
+          DRY_RUN: ${{ vars.CORE_VERSIONS_DRY_RUN }}
+        run: python3 tools/scripts/core_versions.py project

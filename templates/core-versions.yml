@@ -1,0 +1,16 @@
+# Copy this file into your repo as .github/workflows/core-versions.yml
+# After every push to main/master (prod) or stage/develop (stage) it writes the
+# project's Python/Django/djangoCMS/Node/Next/React versions into the sheet
+# "39H Serverliste und SLA". The project needs a row with this repo's URL in column K.
+# "Run workflow" in the Actions tab fills the sheet right away (pick the branch).
+name: Core versions
+on:
+  push:
+    branches: [main, master, stage, develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core-versions:
+    uses: dreipol/github-actions/.github/workflows/reusable-core-versions.yml@master
+    secrets: inherit
