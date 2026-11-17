@@ -38,7 +38,7 @@ Tests: `cd scripts && python3 -m unittest`
 
 ## Core technology versions
 
-Keeps the versions of Python, Django, djangoCMS, Node, Next and React up to date in the tab **Web / Server** of the project Google Sheet, for update planning ([templates/core-versions.yml](templates/core-versions.yml), [.github/workflows/reusable-core-versions.yml](.github/workflows/reusable-core-versions.yml), [scripts/core_versions.py](scripts/core_versions.py)).
+Keeps the versions of Python, Django, djangoCMS, Node, Next and React up to date in the tab **Web / Server** of the **39H Serverliste und SLA** Google Sheet, for update planning ([templates/core-versions.yml](templates/core-versions.yml), [.github/workflows/reusable-core-versions.yml](.github/workflows/reusable-core-versions.yml), [scripts/core_versions.py](scripts/core_versions.py)).
 
 **How it works**
 
@@ -58,7 +58,7 @@ Copy [templates/core-versions.yml](templates/core-versions.yml) to `.github/work
 | Name                               | Kind     | Purpose                                                                                 |
 | ---------------------------------- | -------- | --------------------------------------------------------------------------------------- |
 | `CORE_VERSIONS_GOOGLE_CREDENTIALS` | secret   | JSON key of the Google service account; the sheet is shared with its e-mail as _Editor_ |
-| `CORE_VERSIONS_DRY_RUN`            | variable | `true` = log the planned changes instead of writing them; not set = write              |
+| `CORE_VERSIONS_DRY_RUN`            | variable | `true` = log the planned changes instead of writing them; not set = write               |
 
 The sheet ID, tab and columns are constants at the top of [scripts/core_versions.py](scripts/core_versions.py).
 
